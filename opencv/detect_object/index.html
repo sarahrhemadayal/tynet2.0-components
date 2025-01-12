@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YOLO Live Detection</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .video-feed {
+            width: 640px;
+            height: 480px;
+            border: 1px solid #ccc;
+        }
+        .results {
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YOLO Live Detection</h1>
+        <img id="video-feed" class="video-feed" alt="Video feed">
+        <div class="results">
+            <h3>Detections:</h3>
+            <pre id="detections"></pre>
+            <h3>Summary:</h3>
+            <pre id="summary"></pre>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('127.0.0.1:50160');
+        const videoFeed = document.getElementById('video-feed');
+        const detectionsElem = document.getElementById('detections');
+        const summaryElem = document.getElementById('summary');
+
+        ws.onopen = function() {
+            console.log('Connected to YOLO detection server');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Update video frame
+            if (data.frame) {
+                videoFeed.src = 'data:image/jpeg;base64,' + data.frame;
+            }
+            
+            // Update detections
+            if (data.detections) {
+                detectionsElem.textContent = JSON.stringify(data.detections, null, 2);
+            }
+            
+            // Update summary
+            if (data.summary) {
+                summaryElem.textContent = JSON.stringify(data.summary, null, 2);
+            }
+
+            // Handle errors
+            if (data.error) {
+                console.error('Error:', data.error);
+                detectionsElem.textContent = 'Error: ' + data.error;
+            }
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        ws.onclose = function() {
+            console.log('Disconnected from YOLO detection server');
+        };
+    </script>
+</body>
+</html>
